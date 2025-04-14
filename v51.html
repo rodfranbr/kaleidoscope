@@ -10,17 +10,17 @@
         body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000; font-family:Montserrat,sans-serif; }
         canvas { position:fixed; inset:0; width:100%; height:100%; }
         
-        button, .file-input-button, input, select { 
+        button, input, select { 
             margin:5px 0; padding:6px; width:100%; box-sizing:border-box;
             border-radius:4px; font-family:inherit;
         }
         
-        button, .file-input-button { 
+        button { 
             background:rgba(60,60,120,.6); color:white; border:none;
             cursor:pointer; transition:background .2s; text-align:center;
         }
         
-        button:hover, .file-input-button:hover { background:rgba(80,80,160,.8); }
+        button:hover { background:rgba(80,80,160,.8); }
         
         input, select { 
             border:1px solid rgba(100,100,255,.3); 
@@ -77,22 +77,9 @@
             background:#a0a0ff; cursor:pointer; -webkit-appearance:none;
         }
         
-        .file-input-container { position:relative; overflow:hidden; display:inline-block; width:100%; }
-        .file-input-container input[type=file] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
-        
         .checkbox-container { display:flex; align-items:center; margin:8px 0; }
         .checkbox-container input[type="checkbox"] { width:auto; margin-right:8px; }
         
-        .texture-name { 
-            position:fixed; top:15px; right:15px; 
-            color:#e0e0ff; font-size:18px; font-weight:500;
-            text-shadow:0 0 10px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.7);
-            opacity:0.8; z-index:998; pointer-events:none;
-            padding:5px 10px; background:rgba(0,0,20,.5);
-            border-radius:5px; display:none;
-        }
-        
-        .texture-source { font-size:14px; margin-top:3px; text-align:center; }
         .cursor-hidden { cursor:none !important; }
         
         .fs-button-mini {
@@ -107,12 +94,11 @@
 </head>
 <body>
     <canvas id="kaleidoscope"></canvas>
-    <div class="texture-name" id="textureName"></div>
     <audio id="bgMusic" loop preload="auto">
         <source src="https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/music001.mp3" type="audio/mp3">
     </audio>
     
-    <div class="menu" id="menu">
+    <div class="menu hidden" id="menu">
         <h1>Dreamtime Kaleidoscope</h1>
         <button class="toggle-button" id="toggleMenu">←</button>
         
@@ -125,28 +111,16 @@
         </div>
         
         <div class="checkbox-container">
-            <input type="checkbox" id="showTextureName">
-            <label for="showTextureName">Show Texture Name</label>
-        </div>
-        
-        <div class="checkbox-container">
             <input type="checkbox" id="toggleMusic" checked>
             <label for="toggleMusic">Music</label>
         </div>
         
-        <h2>Textures</h2>
-        <button id="clearBtn">Clear</button>
-        
-        <div class="file-input-container">
-            <div class="file-input-button">Load Texture</div>
-            <input type="file" id="fileInput" accept="image/*" multiple webkitdirectory directory>
-        </div>
-        
+        <h2>Options</h2>
         <button id="fullscreenBtn">Fullscreen</button>
     </div>
     
-    <button class="expand-button" id="expandMenu">→</button>
-    <button class="fs-button-mini" id="fsButtonMini">Fullscreen</button>
+    <button class="expand-button visible" id="expandMenu">→</button>
+    <button class="fs-button-mini visible" id="fsButtonMini">Fullscreen</button>
     
     <script>
         // DOM elements and globals
@@ -158,26 +132,21 @@
         const expandBtn = $('expandMenu');
         const fullscreenBtn = $('fullscreenBtn');
         const fsButtonMini = $('fsButtonMini');
-        const textureName = $('textureName');
         const autoTransitionCb = $('autoTransition');
-        const showTextureNameCb = $('showTextureName');
-        const fileInput = $('fileInput');
-        const clearBtn = $('clearBtn');
-        const bgMusic = $('bgMusic');
         const toggleMusicCb = $('toggleMusic');
+        const bgMusic = $('bgMusic');
         
         // Configuration
         const config = {
-            segmentCount: 24,
-            zoomLevel: 1.2,
-            rotationSpeed: 5.0,
-            transitionSpeed: 3.0,
+            segmentCount: 40,
+            zoomLevel: 1.4,
+            rotationSpeed: 4.0,
+            transitionSpeed: 2.4,
             transitionTime: 15,
             glowIntensity: 1.0,
             glowSpread: 3.0,
             edgeFade: 0.3,
             autoTransition: true,
-            showTextureName: false,
             musicEnabled: true,
             skyPreset: {
                 baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
@@ -190,13 +159,13 @@
         
         // Slider definitions
         const sliders = [
-            {id: 'segments', min: 4, max: 128, value: 24, step: 4, label: 'Segments:', 
+            {id: 'segments', min: 4, max: 128, value: 40, step: 4, label: 'Segments:', 
              setter: val => config.segmentCount = Math.floor(val/4)*4},
-            {id: 'zoom', min: 0.1, max: 2, value: 1.2, step: 0.1, label: 'Zoom:', 
+            {id: 'zoom', min: 0.1, max: 2, value: 1.4, step: 0.1, label: 'Zoom:', 
              setter: val => config.zoomLevel = val},
-            {id: 'rotationSpeed', min: 0.1, max: 10, value: 5, step: 0.1, label: 'Rotation Speed:',
+            {id: 'rotationSpeed', min: 0.1, max: 10, value: 4, step: 0.1, label: 'Rotation Speed:',
              setter: val => config.rotationSpeed = val},
-            {id: 'transitionSpeed', min: 0.1, max: 10, value: 3, step: 0.1, label: 'Transition Speed:',
+            {id: 'transitionSpeed', min: 0.1, max: 10, value: 2.4, step: 0.1, label: 'Transition Speed:',
              setter: val => config.transitionSpeed = val},
             {id: 'transitionTime', min: 15, max: 600, value: 15, step: 5, label: 'Transition Interval (sec):',
              setter: val => config.transitionTime = Math.round(val)}
@@ -258,24 +227,10 @@
                 });
             });
             
-            // File input handler
-            fileInput.addEventListener('change', e => {
-                if (!e.target.files?.length) return;
-                
-                Array.from(e.target.files)
-                    .filter(file => file.type.startsWith('image/'))
-                    .forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = e => loadTexture(e.target.result, file.name, 'hd');
-                        reader.readAsDataURL(file);
-                    });
-            });
+            // Play music automatically
+            playMusic();
             
             // Background music setup
-            document.addEventListener('click', () => {
-                if (config.musicEnabled) bgMusic.play().catch(e => console.log("Music autoplay blocked"));
-            }, {once: true});
-            
             toggleMusicCb.addEventListener('change', e => {
                 config.musicEnabled = e.target.checked;
                 config.musicEnabled ? bgMusic.play() : bgMusic.pause();
@@ -283,14 +238,6 @@
             
             // Other event listeners
             autoTransitionCb.addEventListener('change', e => config.autoTransition = e.target.checked);
-            showTextureNameCb.addEventListener('change', e => {
-                config.showTextureName = e.target.checked;
-                textureName.style.display = config.showTextureName ? 'block' : 'none';
-                updateTextureName();
-            });
-            
-            // Clear button
-            clearBtn.addEventListener('click', clearKaleidoscope);
             
             // Fullscreen buttons
             fullscreenBtn.addEventListener('click', toggleFullscreen);
@@ -319,7 +266,17 @@
             window.addEventListener('resize', resizeCanvas);
             
             // Load default Sky texture
-            setTimeout(loadSkyTextures, 500);
+            loadSkyTextures();
+        }
+        
+        // Try to play music automatically
+        function playMusic() {
+            bgMusic.play().catch(e => {
+                // Fallback for browsers that require user interaction
+                document.addEventListener('click', () => {
+                    if (config.musicEnabled) bgMusic.play();
+                }, {once: true});
+            });
         }
         
         // Touch handlers
@@ -358,25 +315,6 @@
             }
         }
         
-        // Clear kaleidoscope
-        function clearKaleidoscope() {
-            images = [];
-            imageNames = [];
-            imageSources = [];
-            shuffledIndices = [];
-            currentImageIndex = 0;
-            nextImageIndex = -1;
-            isTransitioning = false;
-            textureName.style.display = 'none';
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, width, height);
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-        }
-        
         // Toggle fullscreen
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
@@ -403,23 +341,8 @@
             }
         }
         
-        // Update texture name display
-        function updateTextureName() {
-            if (!config.showTextureName || images.length === 0) return;
-            
-            const imgName = imageNames[currentImageIndex] || '';
-            const imgSource = imageSources[currentImageIndex] || '';
-            
-            textureName.innerHTML = `
-                ${imgName.split('.')[0].toUpperCase()}
-                <div class="texture-source">${imgSource}</div>
-            `;
-        }
-        
         // Load sky textures (always default)
         function loadSkyTextures() {
-            if (images.length) return;
-            
             const preset = config.skyPreset;
             for (let i = 1; i <= preset.count; i++) {
                 const paddedNum = String(i).padStart(preset.padLength, '0');
@@ -480,7 +403,6 @@
                 
                 if (images.length === 1) {
                     currentImageIndex = 0;
-                    updateTextureName();
                     if (!animationId) animationId = requestAnimationFrame(animate);
                 }
                 
@@ -520,7 +442,6 @@
                     nextImageIndex = -1;
                     isTransitioning = false;
                     transitionProgress = 0;
-                    updateTextureName();
                 }
             }
             
