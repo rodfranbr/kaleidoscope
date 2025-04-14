@@ -7,89 +7,102 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap');
         
-        body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000; font-family:Montserrat,sans-serif; }
-        canvas { position:fixed; inset:0; width:100%; height:100%; }
+        /* Base */
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: Montserrat, sans-serif; }
+        canvas { position: fixed; inset: 0; }
         
+        /* Form */
         button, input, select { 
-            margin:5px 0; padding:6px; width:100%; box-sizing:border-box;
-            border-radius:4px; font-family:inherit;
+            margin: 5px 0; padding: 6px; width: 100%; 
+            box-sizing: border-box; border-radius: 4px; 
+            font-family: inherit;
         }
         
         button { 
-            background:rgba(60,60,120,.6); color:white; border:none;
-            cursor:pointer; transition:background .2s; text-align:center;
+            background: rgba(60,60,120,.6); color: white; 
+            border: none; cursor: pointer; 
+            transition: background .2s;
         }
         
-        button:hover { background:rgba(80,80,160,.8); }
+        button:hover { background: rgba(80,80,160,.8); }
         
         input, select { 
-            border:1px solid rgba(100,100,255,.3); 
-            background:rgba(30,30,60,.6); color:#fff; 
+            border: 1px solid rgba(100,100,255,.3); 
+            background: rgba(30,30,60,.6); color: #fff; 
         }
         
         input:focus, button:focus, select:focus { 
-            outline:none; border-color:rgba(100,100,255,.8); 
-            box-shadow:0 0 5px rgba(100,100,255,.5); 
+            outline: none; border-color: rgba(100,100,255,.8); 
+            box-shadow: 0 0 5px rgba(100,100,255,.5); 
         }
         
+        /* Menu */
         .menu { 
-            position:fixed; top:15px; left:15px; 
-            background:rgba(10,10,20,.85); color:#e0e0ff; 
-            padding:18px; border-radius:12px; z-index:1000; 
-            box-shadow:0 0 20px rgba(50,50,150,.4); 
-            max-height:90vh; overflow-y:auto; max-width:360px;
-            border:1px solid rgba(100,100,255,.2);
-            transition:.3s; font-size:14px;
+            position: fixed; top: 15px; left: 15px; 
+            background: rgba(10,10,20,.85); color: #e0e0ff; 
+            padding: 18px; border-radius: 12px; z-index: 1000; 
+            box-shadow: 0 0 20px rgba(50,50,150,.4); 
+            max-height: 90vh; overflow-y: auto; max-width: 360px;
+            border: 1px solid rgba(100,100,255,.2);
+            transition: .3s;
+            font-size: 14px;
         }
         
         .menu.hidden { 
-            opacity:0; transform:scale(.95); 
-            pointer-events:none; left:-380px; 
+            opacity: 0; transform: scale(.95); 
+            pointer-events: none; left: -380px; 
         }
         
+        /* Control buttons */
         .toggle-button, .expand-button {
-            position:fixed; width:24px; height:24px;
-            display:flex; align-items:center; justify-content:center;
-            font-size:14px; z-index:1000;
+            position: fixed; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; z-index: 1000;
         }
         
-        .toggle-button { top:10px; right:10px; position:absolute; }
-        .expand-button { top:15px; left:15px; opacity:0; pointer-events:none; z-index:999; }
-        .expand-button.visible { opacity:1; pointer-events:auto; }
+        .toggle-button { top: 10px; right: 10px; position: absolute; }
+        .expand-button { 
+            top: 15px; left: 15px; opacity: 0; 
+            pointer-events: none; z-index: 999; 
+        }
+        .expand-button.visible { opacity: 1; pointer-events: auto; }
         
-        h1, h2 { color:#a0a0ff; margin-top:15px; margin-bottom:5px; }
-        h1 { font-size:20px; margin-top:0; text-align:center; text-shadow:0 0 5px rgba(100,100,255,.5); }
-        h2 { border-bottom:1px solid rgba(100,100,255,.3); font-size:16px; color:#b0b0ff; padding-bottom:3px; }
+        /* Typography */
+        h1, h2 { color: #a0a0ff; margin-top: 15px; margin-bottom: 5px; }
+        h1 { font-size: 20px; margin-top: 0; text-align: center; text-shadow: 0 0 5px rgba(100,100,255,.5); }
+        h2 { border-bottom: 1px solid rgba(100,100,255,.3); font-size: 16px; color: #b0b0ff; padding-bottom: 3px; }
         
-        .slider-container { display:flex; align-items:center; margin:5px 0; }
-        .slider-container label { flex:1; font-size:13px; }
-        .slider-container input { flex:2; }
-        .slider-container span { width:30px; text-align:right; font-size:12px; }
+        /* Layout */
+        .slider-container { display: flex; align-items: center; margin: 5px 0; }
+        .slider-container label { flex: 1; font-size: 13px; }
+        .slider-container input { flex: 2; }
+        .slider-container span { width: 30px; text-align: right; font-size: 12px; }
         
         input[type=range] { 
-            height:5px; -webkit-appearance:none; 
-            background:rgba(60,60,120,.4); outline:none; 
+            height: 5px; -webkit-appearance: none; 
+            background: rgba(60,60,120,.4); outline: none; 
         }
         
         input[type=range]::-webkit-slider-thumb, 
         input[type=range]::-moz-range-thumb { 
-            width:12px; height:12px; border-radius:50%;
-            background:#a0a0ff; cursor:pointer; -webkit-appearance:none;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #a0a0ff; cursor: pointer; -webkit-appearance: none;
         }
         
-        .checkbox-container { display:flex; align-items:center; margin:8px 0; }
-        .checkbox-container input[type="checkbox"] { width:auto; margin-right:8px; }
+        .checkbox-container { display: flex; align-items: center; margin: 8px 0; }
+        .checkbox-container input[type="checkbox"] { width: auto; margin-right: 8px; }
         
-        .cursor-hidden { cursor:none !important; }
+        /* UI states */
+        .cursor-hidden { cursor: none !important; }
         
         .fs-button-mini {
-            position:fixed; bottom:15px; left:15px; 
-            font-size:12px; width:auto; padding:4px 8px;
-            z-index:999; opacity:0;
+            position: fixed; bottom: 15px; left: 15px; 
+            font-size: 12px; width: auto; padding: 4px 8px;
+            z-index: 999; opacity: 0;
         }
         
-        .fs-button-mini.visible { opacity:0.7; }
-        .fs-button-mini:hover { opacity:1; }
+        .fs-button-mini.visible { opacity: 0.7; }
+        .fs-button-mini:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -123,20 +136,14 @@
     <button class="fs-button-mini visible" id="fsButtonMini">Fullscreen</button>
     
     <script>
-        // DOM elements and globals
+        // DOM shorthand and global refs
         const $ = id => document.getElementById(id);
         const canvas = $('kaleidoscope');
         const ctx = canvas.getContext('2d');
         const menu = $('menu');
-        const toggleBtn = $('toggleMenu');
-        const expandBtn = $('expandMenu');
-        const fullscreenBtn = $('fullscreenBtn');
-        const fsButtonMini = $('fsButtonMini');
-        const autoTransitionCb = $('autoTransition');
-        const toggleMusicCb = $('toggleMusic');
         const bgMusic = $('bgMusic');
         
-        // Configuration
+        // App configuration
         const config = {
             segmentCount: 24,
             zoomLevel: 1.2,
@@ -154,7 +161,7 @@
                 padLength: 5,
                 ext: 'jpeg'
             },
-            segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
+            get segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
         };
         
         // Slider definitions
@@ -173,43 +180,38 @@
         
         // Animation state
         let width, height, centerX, centerY, radius, kaleidoscopeRadius;
-        let images = [], imageNames = [], imageSources = [], shuffledIndices = [], shufflePos = 0;
+        let images = [], shuffledIndices = [], shufflePos = 0;
         let currentImageIndex = 0, nextImageIndex = -1;
         let transitionProgress = 0, isTransitioning = false;
         let angle = 0, lastTimestamp = 0, animationId = null, lastTransitionTime = 0;
         let lastActivity = Date.now(), touchStartX, touchStartY;
         
-        // Effect layers - create once
-        const createCanvas = () => {
-            const c = document.createElement('canvas');
-            return [c, c.getContext('2d')];
-        };
+        // Effect canvases
+        const effects = {};
         
-        const [glowCanvas, glowCtx] = createCanvas();
-        const [mainCanvas, mainCtx] = createCanvas();
-        const [fadeCanvas, fadeCtx] = createCanvas();
-        const [blendCanvas, blendCtx] = createCanvas();
-        
-        // Prevent context menu
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        
-        // Initialize
+        // Init function
         function init() {
+            // Create effect canvases
+            ['glow', 'main', 'fade', 'blend'].forEach(name => {
+                const canvas = document.createElement('canvas');
+                effects[name] = { canvas, ctx: canvas.getContext('2d') };
+            });
+            
             resizeCanvas();
+            setupUI();
+            loadSkyTextures();
             
-            // Menu toggle
-            toggleBtn.addEventListener('click', () => {
-                menu.classList.add('hidden');
-                expandBtn.classList.add('visible');
-                fsButtonMini.classList.add('visible');
-            });
-            
-            expandBtn.addEventListener('click', () => {
-                menu.classList.remove('hidden');
-                expandBtn.classList.remove('visible');
-                fsButtonMini.classList.remove('visible');
-            });
-            
+            // Activity monitor
+            setInterval(() => {
+                if (Date.now() - lastActivity > 3000) {
+                    document.body.classList.add('cursor-hidden');
+                    [$('expandMenu'), $('fsButtonMini')].forEach(el => el.style.opacity = '0');
+                }
+            }, 1000);
+        }
+        
+        // UI setup
+        function setupUI() {
             // Generate slider HTML
             $('sliders').innerHTML = sliders.map(({id, min, max, value, step, label}) => `
                 <div class="slider-container">
@@ -219,93 +221,97 @@
                 </div>
             `).join('');
             
-            // Setup sliders
+            // Attach slider events
             sliders.forEach(slider => {
                 $(slider.id).addEventListener('input', e => {
-                    const val = slider.setter(parseFloat(e.target.value));
+                    const val = parseFloat(e.target.value);
+                    slider.setter(val);
                     $(slider.id + 'Value').textContent = Number.isInteger(val) ? val : val.toFixed(1);
                 });
             });
             
-            // Play music automatically
-            playMusic();
+            // Menu controls
+            $('toggleMenu').addEventListener('click', () => toggleMenu(false));
+            $('expandMenu').addEventListener('click', () => toggleMenu(true));
             
-            // Background music setup
-            toggleMusicCb.addEventListener('change', e => {
+            // Checkbox events
+            $('autoTransition').addEventListener('change', e => config.autoTransition = e.target.checked);
+            $('toggleMusic').addEventListener('change', e => {
                 config.musicEnabled = e.target.checked;
                 config.musicEnabled ? bgMusic.play() : bgMusic.pause();
             });
             
-            // Other event listeners
-            autoTransitionCb.addEventListener('change', e => config.autoTransition = e.target.checked);
+            // Prevent context menu
+            document.addEventListener('contextmenu', e => e.preventDefault());
             
-            // Fullscreen buttons
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
-            fsButtonMini.addEventListener('click', toggleFullscreen);
-            
+            // Fullscreen controls
+            ['fullscreenBtn', 'fsButtonMini'].forEach(id => 
+                $(id).addEventListener('click', toggleFullscreen));
             document.addEventListener('fullscreenchange', updateFullscreenButtons);
             
-            // Touch events for mobile
-            canvas.addEventListener('touchstart', handleTouchStart);
-            canvas.addEventListener('touchmove', handleTouchMove);
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
             canvas.addEventListener('touchend', () => lastActivity = Date.now());
             
-            // Activity monitoring for cursor hiding
+            // Activity tracking
             ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(event => {
-                document.addEventListener(event, () => {
-                    lastActivity = Date.now();
-                    document.body.classList.remove('cursor-hidden');
-                    expandBtn.style.opacity = expandBtn.classList.contains('visible') ? '1' : '0';
-                    fsButtonMini.style.opacity = fsButtonMini.classList.contains('visible') ? '0.7' : '0';
-                });
+                document.addEventListener(event, updateActivity);
             });
             
-            // Cursor hiding timer
-            setInterval(checkIdle, 1000);
-            
+            // Window resize
             window.addEventListener('resize', resizeCanvas);
             
-            // Load default Sky texture
-            loadSkyTextures();
+            // Play music on first interaction
+            document.addEventListener('click', () => {
+                if (config.musicEnabled) bgMusic.play();
+            }, {once: true});
         }
         
-        // Try to play music automatically
-        function playMusic() {
-            bgMusic.play().catch(e => {
-                // Fallback for browsers that require user interaction
-                document.addEventListener('click', () => {
-                    if (config.musicEnabled) bgMusic.play();
-                }, {once: true});
-            });
+        // Update UI activity state
+        function updateActivity() {
+            lastActivity = Date.now();
+            document.body.classList.remove('cursor-hidden');
+            
+            const expandBtn = $('expandMenu');
+            const fsBtn = $('fsButtonMini');
+            expandBtn.style.opacity = expandBtn.classList.contains('visible') ? '1' : '0';
+            fsBtn.style.opacity = fsBtn.classList.contains('visible') ? '0.7' : '0';
         }
         
-        // Touch handlers
-        function handleTouchStart(e) {
-            if (e.touches.length === 1) {
+        // Menu visibility toggle
+        function toggleMenu(show) {
+            menu.classList[show ? 'remove' : 'add']('hidden');
+            ['expandMenu', 'fsButtonMini'].forEach(id => 
+                $(id).classList[show ? 'remove' : 'add']('visible'));
+        }
+        
+        // Handle touch events
+        function handleTouch(e) {
+            if (e.type === 'touchstart' && e.touches.length === 1) {
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
                 lastActivity = Date.now();
+                return;
             }
-        }
-        
-        function handleTouchMove(e) {
-            if (e.touches.length === 1) {
+            
+            if (e.type === 'touchmove' && e.touches.length === 1) {
                 const touch = e.touches[0];
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
                 
-                // Adjust zoom based on vertical movement
                 if (Math.abs(deltaY) > 10) {
                     config.zoomLevel = Math.max(0.1, Math.min(2, config.zoomLevel - deltaY * 0.002));
-                    $('zoom').value = config.zoomLevel;
+                    const zoomInput = $('zoom');
+                    zoomInput.value = config.zoomLevel;
                     $('zoomValue').textContent = config.zoomLevel.toFixed(1);
                 }
                 
-                // Adjust rotation speed based on horizontal movement
                 if (Math.abs(deltaX) > 10) {
                     config.rotationSpeed = Math.max(0.1, Math.min(10, config.rotationSpeed + deltaX * 0.005));
-                    $('rotationSpeed').value = config.rotationSpeed;
+                    const rotInput = $('rotationSpeed');
+                    rotInput.value = config.rotationSpeed;
                     $('rotationSpeedValue').textContent = config.rotationSpeed.toFixed(1);
                 }
                 
@@ -315,7 +321,7 @@
             }
         }
         
-        // Toggle fullscreen
+        // Fullscreen functions
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(e => console.error(e));
@@ -325,34 +331,42 @@
             updateFullscreenButtons();
         }
         
-        // Update fullscreen button text
         function updateFullscreenButtons() {
-            const isFullscreen = !!document.fullscreenElement;
-            fullscreenBtn.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
-            fsButtonMini.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+            const text = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+            $('fullscreenBtn').textContent = text;
+            $('fsButtonMini').textContent = text;
         }
         
-        // Check for idle time
-        function checkIdle() {
-            if (Date.now() - lastActivity > 3000) {
-                document.body.classList.add('cursor-hidden');
-                expandBtn.style.opacity = '0';
-                fsButtonMini.style.opacity = '0';
-            }
-        }
-        
-        // Load sky textures (always default)
+        // Load sky textures
         function loadSkyTextures() {
-            const preset = config.skyPreset;
-            for (let i = 1; i <= preset.count; i++) {
-                const paddedNum = String(i).padStart(preset.padLength, '0');
-                const url = `${preset.baseUrl}${paddedNum}.${preset.ext}`;
-                const name = `sky${paddedNum}`;
-                loadTexture(url, name, 'online');
+            const {baseUrl, count, padLength, ext} = config.skyPreset;
+            for (let i = 1; i <= count; i++) {
+                const paddedNum = String(i).padStart(padLength, '0');
+                loadTexture(`${baseUrl}${paddedNum}.${ext}`);
             }
         }
         
-        // Generate shuffled indices
+        // Load a texture
+        function loadTexture(url) {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = url;
+            
+            img.onload = () => {
+                images.push(img);
+                
+                if (images.length === 1) {
+                    currentImageIndex = 0;
+                    if (!animationId) animationId = requestAnimationFrame(animate);
+                }
+                
+                if (shuffledIndices.length === 0) shuffleIndices();
+            };
+            
+            img.onerror = () => console.error('Error loading image:', url);
+        }
+        
+        // Shuffle image indices
         function shuffleIndices() {
             shuffledIndices = Array.from({length: images.length}, (_, i) => i);
             for (let i = shuffledIndices.length - 1; i > 0; i--) {
@@ -362,7 +376,7 @@
             shufflePos = 0;
         }
         
-        // Get next index in shuffle
+        // Get next shuffled index
         function getNextShuffledIndex() {
             if (shuffledIndices.length === 0 || shufflePos >= shuffledIndices.length) {
                 shuffleIndices();
@@ -370,7 +384,7 @@
             return shuffledIndices[shufflePos++];
         }
         
-        // Resize canvas and effect buffers
+        // Resize canvas
         function resizeCanvas() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -382,37 +396,12 @@
             kaleidoscopeRadius = radius * config.zoomLevel;
             
             // Resize effect canvases
-            [glowCanvas, mainCanvas, fadeCanvas, blendCanvas].forEach(c => {
-                c.width = width;
-                c.height = height;
+            Object.values(effects).forEach(({canvas}) => {
+                canvas.width = width;
+                canvas.height = height;
             });
             
             if (images.length) render();
-        }
-        
-        // Loader for textures
-        function loadTexture(url, name, source) {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = url;
-            
-            img.onload = () => {
-                images.push(img);
-                imageNames.push(name || url.split('/').pop());
-                imageSources.push(source || 'online');
-                
-                if (images.length === 1) {
-                    currentImageIndex = 0;
-                    if (!animationId) animationId = requestAnimationFrame(animate);
-                }
-                
-                // Initialize shuffle if this is the first load
-                if (shuffledIndices.length === 0) {
-                    shuffleIndices();
-                }
-            };
-            
-            img.onerror = () => console.error('Error loading image:', url);
         }
         
         // Animation loop
@@ -420,6 +409,7 @@
             const deltaTime = Math.min(timestamp - lastTimestamp, 100) || 16.67;
             lastTimestamp = timestamp;
             
+            // Update rotation angle
             angle += 0.00001 * deltaTime * config.rotationSpeed;
             
             const currentTime = timestamp / 1000;
@@ -449,18 +439,30 @@
             animationId = requestAnimationFrame(animate);
         }
         
+        // Calculate scaled dimensions
+        function getScaledDimensions(img) {
+            const scaleFactor = kaleidoscopeRadius * 2 / Math.max(img.width, img.height);
+            return [img.width * scaleFactor, img.height * scaleFactor];
+        }
+        
         // Render the kaleidoscope
         function render() {
             if (!images.length) return;
             
             kaleidoscopeRadius = radius * config.zoomLevel;
             
+            // Get contexts from effects
+            const {ctx: mainCtx} = effects.main;
+            const {ctx: glowCtx} = effects.glow;
+            const {ctx: fadeCtx} = effects.fade;
+            const {ctx: blendCtx} = effects.blend;
+            
             // Clear canvases
             [ctx, mainCtx, glowCtx, fadeCtx, blendCtx].forEach(context => {
                 context.clearRect(0, 0, width, height);
             });
             
-            const segmentAngle = config.segmentAngle();
+            const segmentAngle = config.segmentAngle;
             const overlapFactor = 1.1;
             
             // Draw main kaleidoscope
@@ -470,13 +472,6 @@
             
             const currentImg = images[currentImageIndex];
             const nextImg = isTransitioning && nextImageIndex >= 0 ? images[nextImageIndex] : null;
-            
-            // Calculate scale to fit image properly regardless of resolution
-            const getScaledDimensions = (img) => {
-                // Scale factor ensures image fits the kaleidoscope segment
-                const scaleFactor = kaleidoscopeRadius * 2 / Math.max(img.width, img.height);
-                return [img.width * scaleFactor, img.height * scaleFactor];
-            };
             
             // Draw segments
             for (let i = 0; i < config.segmentCount; i++) {
@@ -493,7 +488,7 @@
                 // Alternate rotation direction
                 mainCtx.rotate(angle * (i % 2 === 0 ? 1 : -1));
                 
-                // Draw current image with proper scaling
+                // Draw images
                 if (nextImg) {
                     // Transitioning between images
                     const [drawWidth, drawHeight] = getScaledDimensions(currentImg);
@@ -515,23 +510,21 @@
             
             mainCtx.restore();
             
-            // Create smooth anti-aliased edge with multiple gradient passes
+            // Create smooth edge fade
             blendCtx.save();
-            blendCtx.drawImage(mainCanvas, 0, 0);
-            
-            // First we draw edge blend with smooth transition using multiple steps
+            blendCtx.drawImage(effects.main.canvas, 0, 0);
             blendCtx.globalCompositeOperation = 'destination-out';
             
             const edgeFadeWidth = kaleidoscopeRadius * config.edgeFade;
             const innerRadius = kaleidoscopeRadius - edgeFadeWidth;
             
-            // Create smoother multi-step gradient for edge fading
+            // Create gradient for edge fading
             const gradient = blendCtx.createRadialGradient(
-                centerX, centerY, innerRadius * 0.98, // Start slightly earlier
-                centerX, centerY, kaleidoscopeRadius * 1.02 // Extend slightly beyond
+                centerX, centerY, innerRadius * 0.98,
+                centerX, centerY, kaleidoscopeRadius * 1.02
             );
             
-            // Multi-step gradient for smoother transitions
+            // Multi-step gradient
             gradient.addColorStop(0, 'rgba(0,0,0,0)');
             gradient.addColorStop(0.7, 'rgba(0,0,0,0.1)');
             gradient.addColorStop(0.85, 'rgba(0,0,0,0.4)');
@@ -543,7 +536,7 @@
             blendCtx.arc(centerX, centerY, kaleidoscopeRadius * 1.05, 0, Math.PI * 2);
             blendCtx.fill();
             
-            // Additional subtle blur pass for smooth edge
+            // Additional blur for smooth edge
             blendCtx.filter = 'blur(1px)';
             blendCtx.globalCompositeOperation = 'destination-out';
             blendCtx.beginPath();
@@ -552,16 +545,15 @@
             blendCtx.filter = 'none';
             blendCtx.restore();
             
-            // Now render the fade to fadeCanvas
-            fadeCtx.clearRect(0, 0, width, height);
-            fadeCtx.drawImage(blendCanvas, 0, 0);
+            // Render the fade
+            fadeCtx.drawImage(effects.blend.canvas, 0, 0);
             
-            // Glow effect
+            // Apply glow effect
             glowCtx.save();
-            glowCtx.drawImage(fadeCanvas, 0, 0);
+            glowCtx.drawImage(effects.fade.canvas, 0, 0);
             glowCtx.filter = 'blur(20px)';
             glowCtx.globalAlpha = config.glowIntensity * 0.7;
-            glowCtx.drawImage(fadeCanvas, 0, 0);
+            glowCtx.drawImage(effects.fade.canvas, 0, 0);
             
             // Multi-layer glow
             for (let scale = 1.05; scale <= config.glowSpread; scale += 0.1) {
@@ -571,7 +563,7 @@
                 glowCtx.scale(scale, scale);
                 glowCtx.translate(-centerX, -centerY);
                 glowCtx.filter = `blur(${Math.floor(12 + scale * 10)}px)`;
-                glowCtx.drawImage(fadeCanvas, 0, 0);
+                glowCtx.drawImage(effects.fade.canvas, 0, 0);
                 glowCtx.restore();
             }
             
@@ -582,12 +574,13 @@
             ctx.fillRect(0, 0, width, height);
             
             ctx.globalCompositeOperation = 'screen';
-            ctx.drawImage(glowCanvas, 0, 0);
+            ctx.drawImage(effects.glow.canvas, 0, 0);
             
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(fadeCanvas, 0, 0);
+            ctx.drawImage(effects.fade.canvas, 0, 0);
         }
         
+        // Start the app
         init();
     </script>
 </body>
