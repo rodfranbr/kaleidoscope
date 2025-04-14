@@ -11,7 +11,7 @@
         body, html { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: Montserrat, sans-serif; }
         canvas { position: fixed; inset: 0; }
         
-        /* Form */
+        /* UI Elements */
         button, input, select { 
             margin: 5px 0; padding: 6px; width: 100%; 
             box-sizing: border-box; border-radius: 4px; 
@@ -48,10 +48,7 @@
             font-size: 14px;
         }
         
-        .menu.hidden { 
-            opacity: 0; transform: scale(.95); 
-            pointer-events: none; left: -380px; 
-        }
+        .menu.hidden { transform: scale(.95) translateX(-380px); opacity: 0; pointer-events: none; }
         
         /* Control buttons */
         .toggle-button, .expand-button {
@@ -61,10 +58,7 @@
         }
         
         .toggle-button { top: 10px; right: 10px; position: absolute; }
-        .expand-button { 
-            top: 15px; left: 15px; opacity: 0; 
-            pointer-events: none; z-index: 999; 
-        }
+        .expand-button { top: 15px; left: 15px; opacity: 0; pointer-events: none; z-index: 999; }
         .expand-button.visible { opacity: 1; pointer-events: auto; }
         
         /* Typography */
@@ -72,7 +66,7 @@
         h1 { font-size: 20px; margin-top: 0; text-align: center; text-shadow: 0 0 5px rgba(100,100,255,.5); }
         h2 { border-bottom: 1px solid rgba(100,100,255,.3); font-size: 16px; color: #b0b0ff; padding-bottom: 3px; }
         
-        /* Layout */
+        /* Controls */
         .slider-container { display: flex; align-items: center; margin: 5px 0; }
         .slider-container label { flex: 1; font-size: 13px; }
         .slider-container input { flex: 2; }
@@ -93,7 +87,7 @@
         .checkbox-container input[type="checkbox"] { width: auto; margin-right: 8px; }
         
         /* UI states */
-        .cursor-hidden { cursor: none !important; }
+        .cursor-hidden { cursor: none; }
         
         .fs-button-mini {
             position: fixed; bottom: 15px; left: 15px; 
@@ -110,6 +104,7 @@
             text-align: center; font-style: italic; 
             color: #e8e8ff; text-shadow: 0 0 2px rgba(160,160,255,0.4);
         }
+        
         .donate-btn { 
             background: #ffc439; color: #253b80; font-weight: 500;
             margin: 8px auto; padding: 10px; max-width: 180px; 
@@ -117,14 +112,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             transition: all 0.2s ease;
         }
+        
         .donate-btn:hover { background: #ffce61; transform: translateY(-2px); }
     </style>
 </head>
 <body>
     <canvas id="kaleidoscope"></canvas>
-    <audio id="bgMusic" preload="auto">
-        <source src="" type="audio/mp3">
-    </audio>
+    <audio id="bgMusic" preload="auto"></audio>
     
     <div class="menu hidden" id="menu">
         <h1>Dreamtime Kaleidoscope</h1>
@@ -157,12 +151,14 @@
     <button class="fs-button-mini visible" id="fsButtonMini">Fullscreen</button>
     
     <script>
-        // DOM shorthand and global refs
+        // DOM helpers and optimization
         const $ = id => document.getElementById(id);
         const canvas = $('kaleidoscope');
         const ctx = canvas.getContext('2d');
         const menu = $('menu');
         const bgMusic = $('bgMusic');
+        const expandBtn = $('expandMenu');
+        const fsBtn = $('fsButtonMini');
         
         // App configuration
         const config = {
@@ -182,27 +178,37 @@
                 padLength: 5,
                 ext: 'jpeg'
             },
+            musicPreset: {
+                baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/',
+                count: 12,
+                padLength: 3,
+                prefix: 'music',
+                ext: 'mp3',
+                delayBetween: 3000,
+                fadeOutStart: 5,     // Segundos antes do fim para começar o fade
+                silenceBetween: 3000  // Pausa em ms entre músicas
+            },
             get segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
         };
         
         // Music system
         const music = {
-            baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/',
-            tracks: ['music001.mp3', 'music002.mp3', 'music003.mp3', 'music004.mp3'],
             queue: [],
             currentIndex: 0,
+            delayTimer: null,
+            isFading: false,
+            fadeOutTime: 0, 
             init() {
                 this.resetQueue();
                 this.loadCurrent();
-                // Use the ended event to handle playing next track
-                bgMusic.addEventListener('ended', () => this.playNext());
-                console.log("Music system initialized with tracks:", this.tracks);
+                bgMusic.addEventListener('timeupdate', () => this.handleTimeUpdate());
+                bgMusic.addEventListener('ended', () => this.handleEnded());
+                bgMusic.volume = 1.0;
             },
             resetQueue() {
-                this.queue = [...Array(this.tracks.length).keys()];
+                this.queue = Array.from({length: config.musicPreset.count}, (_, i) => i + 1);
                 this.shuffleQueue();
                 this.currentIndex = 0;
-                console.log("Music queue reset and shuffled:", this.queue);
             },
             shuffleQueue() {
                 for (let i = this.queue.length - 1; i > 0; i--) {
@@ -211,17 +217,37 @@
                 }
             },
             loadCurrent() {
-                const trackIndex = this.queue[this.currentIndex];
-                const trackUrl = this.baseUrl + this.tracks[trackIndex];
-                bgMusic.src = trackUrl;
-                console.log(`Loading track ${trackIndex}: ${trackUrl}`);
-                if (config.musicEnabled) bgMusic.play().catch(e => console.error("Error playing music:", e));
+                const {baseUrl, padLength, prefix, ext} = config.musicPreset;
+                bgMusic.src = `${baseUrl}${prefix}${String(this.queue[this.currentIndex]).padStart(padLength, '0')}.${ext}`;
+                if (config.musicEnabled) bgMusic.play().catch(e => console.error("Music error:", e));
+                this.isFading = false;
             },
-            playNext() {
-                this.currentIndex = (this.currentIndex + 1) % this.queue.length;
-                if (this.currentIndex === 0) this.resetQueue();
-                console.log(`Playing next track, index: ${this.currentIndex}`);
-                this.loadCurrent();
+            handleTimeUpdate() {
+                if (!bgMusic.duration) return;
+                
+                // Inicia fade out quando estiver próximo do fim
+                const timeRemaining = bgMusic.duration - bgMusic.currentTime;
+                
+                if (timeRemaining < config.musicPreset.fadeOutStart && !this.isFading) {
+                    this.isFading = true;
+                    this.fadeOutTime = Date.now();
+                }
+                
+                if (this.isFading) {
+                    const elapsed = (Date.now() - this.fadeOutTime) / 1000;
+                    const fadeRatio = Math.max(0.01, 1 - (elapsed / config.musicPreset.fadeOutStart));
+                    bgMusic.volume = Math.pow(fadeRatio, 2); // Aplicação exponencial para fade mais natural
+                }
+            },
+            handleEnded() {
+                // Pausa por um tempo antes de iniciar a próxima música
+                clearTimeout(this.delayTimer);
+                this.delayTimer = setTimeout(() => {
+                    this.currentIndex = (this.currentIndex + 1) % this.queue.length;
+                    if (this.currentIndex === 0) this.shuffleQueue();
+                    bgMusic.volume = 1.0;
+                    this.loadCurrent();
+                }, config.musicPreset.silenceBetween);
             }
         };
         
@@ -243,10 +269,10 @@
         let angle = 0, lastTimestamp = 0, animationId = null, lastTransitionTime = 0;
         let lastActivity = Date.now(), touchStartX, touchStartY;
         
-        // Effect canvases
+        // Effect canvases - Create once and reuse
         const effects = {};
         
-        // Init function
+        // Initialize app
         function init() {
             // Create effect canvases
             ['glow', 'main', 'fade', 'blend'].forEach(name => {
@@ -263,7 +289,7 @@
             setInterval(() => {
                 if (Date.now() - lastActivity > 3000) {
                     document.body.classList.add('cursor-hidden');
-                    [$('expandMenu'), $('fsButtonMini')].forEach(el => el.style.opacity = '0');
+                    expandBtn.style.opacity = fsBtn.style.opacity = '0';
                 }
             }, 1000);
         }
@@ -288,18 +314,14 @@
                 });
             });
             
-            // Menu controls
+            // Setup events
             $('toggleMenu').addEventListener('click', () => toggleMenu(false));
-            $('expandMenu').addEventListener('click', () => toggleMenu(true));
-            
-            // Checkbox events
+            expandBtn.addEventListener('click', () => toggleMenu(true));
             $('autoTransition').addEventListener('change', e => config.autoTransition = e.target.checked);
             $('toggleMusic').addEventListener('change', e => {
                 config.musicEnabled = e.target.checked;
                 config.musicEnabled ? bgMusic.play().catch(e => console.error("Play error:", e)) : bgMusic.pause();
             });
-            
-            // Donate button
             $('donateBtn').addEventListener('click', () => window.open('https://www.paypal.com', '_blank'));
             
             // Prevent context menu
@@ -333,9 +355,6 @@
         function updateActivity() {
             lastActivity = Date.now();
             document.body.classList.remove('cursor-hidden');
-            
-            const expandBtn = $('expandMenu');
-            const fsBtn = $('fsButtonMini');
             expandBtn.style.opacity = expandBtn.classList.contains('visible') ? '1' : '0';
             fsBtn.style.opacity = fsBtn.classList.contains('visible') ? '0.7' : '0';
         }
@@ -343,8 +362,7 @@
         // Menu visibility toggle
         function toggleMenu(show) {
             menu.classList[show ? 'remove' : 'add']('hidden');
-            ['expandMenu', 'fsButtonMini'].forEach(id => 
-                $(id).classList[show ? 'remove' : 'add']('visible'));
+            [expandBtn, fsBtn].forEach(el => el.classList[show ? 'remove' : 'add']('visible'));
         }
         
         // Touch handling
@@ -394,72 +412,59 @@
         
         function updateFullscreenButtons() {
             const text = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
-            $('fullscreenBtn').textContent = text;
-            $('fsButtonMini').textContent = text;
+            $('fullscreenBtn').textContent = $('fsButtonMini').textContent = text;
+        }
+        
+        // Shuffle array helper
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
         
         // Load sky textures
         function loadSkyTextures() {
             const {baseUrl, count, padLength, ext} = config.skyPreset;
-            const indices = Array.from({length: count}, (_, i) => i + 1);
-            
-            // Shuffle indices for random loading order
-            for (let i = indices.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [indices[i], indices[j]] = [indices[j], indices[i]];
-            }
+            const indices = shuffleArray(Array.from({length: count}, (_, i) => i + 1));
             
             // Load images in shuffled order
             indices.forEach(i => {
-                const paddedNum = String(i).padStart(padLength, '0');
-                loadTexture(`${baseUrl}${paddedNum}.${ext}`);
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = `${baseUrl}${String(i).padStart(padLength, '0')}.${ext}`;
+                
+                img.onload = () => {
+                    const index = images.length;
+                    images.push(img);
+                    imageQueue.push(index);
+                    
+                    if (images.length === 1) {
+                        currentImageIndex = 0;
+                        if (!animationId) animationId = requestAnimationFrame(animate);
+                    }
+                    
+                    if (images.length === count) shuffleImageQueue();
+                };
+                
+                img.onerror = () => console.error('Error loading image:', img.src);
             });
-        }
-        
-        // Load a texture
-        function loadTexture(url) {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = url;
-            
-            img.onload = () => {
-                const index = images.length;
-                images.push(img);
-                imageQueue.push(index);
-                
-                if (images.length === 1) {
-                    // Randomize first image
-                    currentImageIndex = 0;
-                    if (!animationId) animationId = requestAnimationFrame(animate);
-                }
-                
-                // Shuffle image queue for first load
-                if (images.length === config.skyPreset.count) {
-                    shuffleImageQueue();
-                }
-            };
-            
-            img.onerror = () => console.error('Error loading image:', url);
         }
         
         // Shuffle image queue
         function shuffleImageQueue() {
-            for (let i = imageQueue.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [imageQueue[i], imageQueue[j]] = [imageQueue[j], imageQueue[i]];
-            }
+            shuffleArray(imageQueue);
             imageQueueIndex = 0;
         }
         
         // Get next image from queue
         function getNextImageIndex() {
-            if (imageQueueIndex >= imageQueue.length) {
-                shuffleImageQueue();
-            }
+            if (imageQueueIndex >= imageQueue.length) shuffleImageQueue();
             return imageQueue[imageQueueIndex++];
         }
         
-        // Resize canvas
+        // Resize canvas with optimized dimensions calculation
         function resizeCanvas() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -479,7 +484,7 @@
             if (images.length) render();
         }
         
-        // Animation loop
+        // Animation loop with performance optimizations
         function animate(timestamp) {
             const deltaTime = Math.min(timestamp - lastTimestamp, 100) || 16.67;
             lastTimestamp = timestamp;
