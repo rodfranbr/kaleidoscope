@@ -108,6 +108,9 @@
 <body>
     <canvas id="kaleidoscope"></canvas>
     <div class="texture-name" id="textureName"></div>
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/music001.mp3" type="audio/mp3">
+    </audio>
     
     <div class="menu" id="menu">
         <h1>Dreamtime Kaleidoscope</h1>
@@ -124,6 +127,11 @@
         <div class="checkbox-container">
             <input type="checkbox" id="showTextureName">
             <label for="showTextureName">Show Texture Name</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="toggleMusic" checked>
+            <label for="toggleMusic">Music</label>
         </div>
         
         <h2>Textures</h2>
@@ -155,6 +163,8 @@
         const showTextureNameCb = $('showTextureName');
         const fileInput = $('fileInput');
         const clearBtn = $('clearBtn');
+        const bgMusic = $('bgMusic');
+        const toggleMusicCb = $('toggleMusic');
         
         // Configuration
         const config = {
@@ -168,6 +178,7 @@
             edgeFade: 0.3,
             autoTransition: true,
             showTextureName: false,
+            musicEnabled: true,
             skyPreset: {
                 baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
                 count: 42,
@@ -260,6 +271,16 @@
                     });
             });
             
+            // Background music setup
+            document.addEventListener('click', () => {
+                if (config.musicEnabled) bgMusic.play().catch(e => console.log("Music autoplay blocked"));
+            }, {once: true});
+            
+            toggleMusicCb.addEventListener('change', e => {
+                config.musicEnabled = e.target.checked;
+                config.musicEnabled ? bgMusic.play() : bgMusic.pause();
+            });
+            
             // Other event listeners
             autoTransitionCb.addEventListener('change', e => config.autoTransition = e.target.checked);
             showTextureNameCb.addEventListener('change', e => {
@@ -280,7 +301,7 @@
             // Touch events for mobile
             canvas.addEventListener('touchstart', handleTouchStart);
             canvas.addEventListener('touchmove', handleTouchMove);
-            canvas.addEventListener('touchend', e => { lastActivity = Date.now(); });
+            canvas.addEventListener('touchend', () => lastActivity = Date.now());
             
             // Activity monitoring for cursor hiding
             ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(event => {
@@ -298,7 +319,7 @@
             window.addEventListener('resize', resizeCanvas);
             
             // Load default Sky texture
-            setTimeout(() => loadSkyTextures(), 500);
+            setTimeout(loadSkyTextures, 500);
         }
         
         // Touch handlers
