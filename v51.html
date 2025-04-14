@@ -138,10 +138,10 @@
         
         // Configuration
         const config = {
-            segmentCount: 40,
-            zoomLevel: 1.4,
-            rotationSpeed: 4.0,
-            transitionSpeed: 2.4,
+            segmentCount: 24,
+            zoomLevel: 1.2,
+            rotationSpeed: 5.0,
+            transitionSpeed: 3.0,
             transitionTime: 15,
             glowIntensity: 1.0,
             glowSpread: 3.0,
@@ -159,13 +159,13 @@
         
         // Slider definitions
         const sliders = [
-            {id: 'segments', min: 4, max: 128, value: 40, step: 4, label: 'Segments:', 
+            {id: 'segments', min: 4, max: 128, value: 24, step: 4, label: 'Segments:', 
              setter: val => config.segmentCount = Math.floor(val/4)*4},
-            {id: 'zoom', min: 0.1, max: 2, value: 1.4, step: 0.1, label: 'Zoom:', 
+            {id: 'zoom', min: 0.1, max: 2, value: 1.2, step: 0.1, label: 'Zoom:', 
              setter: val => config.zoomLevel = val},
-            {id: 'rotationSpeed', min: 0.1, max: 10, value: 4, step: 0.1, label: 'Rotation Speed:',
+            {id: 'rotationSpeed', min: 0.1, max: 10, value: 5, step: 0.1, label: 'Rotation Speed:',
              setter: val => config.rotationSpeed = val},
-            {id: 'transitionSpeed', min: 0.1, max: 10, value: 2.4, step: 0.1, label: 'Transition Speed:',
+            {id: 'transitionSpeed', min: 0.1, max: 10, value: 3, step: 0.1, label: 'Transition Speed:',
              setter: val => config.transitionSpeed = val},
             {id: 'transitionTime', min: 15, max: 600, value: 15, step: 5, label: 'Transition Interval (sec):',
              setter: val => config.transitionTime = Math.round(val)}
