@@ -122,7 +122,7 @@
 </head>
 <body>
     <canvas id="kaleidoscope"></canvas>
-    <audio id="bgMusic" loop preload="auto">
+    <audio id="bgMusic" preload="auto">
         <source src="" type="audio/mp3">
     </audio>
     
@@ -194,7 +194,8 @@
             init() {
                 this.resetQueue();
                 this.loadCurrent();
-                bgMusic.onended = () => this.playNext();
+                // Use the ended event to handle playing next track
+                bgMusic.addEventListener('ended', () => this.playNext());
                 console.log("Music system initialized with tracks:", this.tracks);
             },
             resetQueue() {
@@ -217,8 +218,8 @@
                 if (config.musicEnabled) bgMusic.play().catch(e => console.error("Error playing music:", e));
             },
             playNext() {
-                this.currentIndex++;
-                if (this.currentIndex >= this.queue.length) this.resetQueue();
+                this.currentIndex = (this.currentIndex + 1) % this.queue.length;
+                if (this.currentIndex === 0) this.resetQueue();
                 console.log(`Playing next track, index: ${this.currentIndex}`);
                 this.loadCurrent();
             }
@@ -346,7 +347,7 @@
                 $(id).classList[show ? 'remove' : 'add']('visible'));
         }
         
-        // Handle touch events
+        // Touch handling
         function handleTouch(e) {
             if (e.type === 'touchstart' && e.touches.length === 1) {
                 const touch = e.touches[0];
