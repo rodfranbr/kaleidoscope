@@ -103,12 +103,27 @@
         
         .fs-button-mini.visible { opacity: 0.7; }
         .fs-button-mini:hover { opacity: 1; }
+        
+        /* About section */
+        .about { 
+            font-size: 13px; line-height: 1.5; margin: 12px 0; 
+            text-align: center; font-style: italic; 
+            color: #e8e8ff; text-shadow: 0 0 2px rgba(160,160,255,0.4);
+        }
+        .donate-btn { 
+            background: #ffc439; color: #253b80; font-weight: 500;
+            margin: 8px auto; padding: 10px; max-width: 180px; 
+            display: block; border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        .donate-btn:hover { background: #ffce61; transform: translateY(-2px); }
     </style>
 </head>
 <body>
     <canvas id="kaleidoscope"></canvas>
     <audio id="bgMusic" loop preload="auto">
-        <source src="https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/music001.mp3" type="audio/mp3">
+        <source src="" type="audio/mp3">
     </audio>
     
     <div class="menu hidden" id="menu">
@@ -130,6 +145,12 @@
         
         <h2>Options</h2>
         <button id="fullscreenBtn">Fullscreen</button>
+        
+        <h2>About Me</h2>
+        <div class="about">
+            My name is Rodrigo, I am from Brazil. I created this kaleidoscope with care to offer you a peaceful moment in a noisy world. It's free, with no ads—just a quiet space to breathe and be. I hope it brings you light and peace. If you'd like to support me with any amount, I'd be truly grateful.
+        </div>
+        <button class="donate-btn" id="donateBtn">Donate</button>
     </div>
     
     <button class="expand-button visible" id="expandMenu">→</button>
@@ -148,8 +169,8 @@
             segmentCount: 24,
             zoomLevel: 1.2,
             rotationSpeed: 5.0,
-            transitionSpeed: 3.0,
-            transitionTime: 15,
+            transitionSpeed: 2.3,
+            transitionTime: 20,
             glowIntensity: 1.0,
             glowSpread: 3.0,
             edgeFade: 0.3,
@@ -164,6 +185,47 @@
             get segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
         };
         
+        // Music system
+        const music = {
+            baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/main/',
+            tracks: ['music001.mp3', 'music002.mp3', 'music003.mp3', 'music004.mp3'],
+            queue: [],
+            currentIndex: 0,
+            init() {
+                // Create a shuffled queue of all tracks
+                this.resetQueue();
+                this.loadCurrent();
+                
+                bgMusic.onended = () => this.playNext();
+                console.log("Music system initialized with tracks:", this.tracks);
+            },
+            resetQueue() {
+                this.queue = [...Array(this.tracks.length).keys()];
+                this.shuffleQueue();
+                this.currentIndex = 0;
+                console.log("Music queue reset and shuffled:", this.queue);
+            },
+            shuffleQueue() {
+                for (let i = this.queue.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
+                }
+            },
+            loadCurrent() {
+                if (this.currentIndex >= this.queue.length) this.resetQueue();
+                const trackIndex = this.queue[this.currentIndex];
+                const trackUrl = this.baseUrl + this.tracks[trackIndex];
+                bgMusic.src = trackUrl;
+                console.log(`Loading track ${trackIndex}: ${trackUrl}`);
+                if (config.musicEnabled) bgMusic.play().catch(e => console.error("Error playing music:", e));
+            },
+            playNext() {
+                this.currentIndex++;
+                console.log(`Playing next track, index: ${this.currentIndex}`);
+                this.loadCurrent();
+            }
+        };
+        
         // Slider definitions
         const sliders = [
             {id: 'segments', min: 4, max: 128, value: 24, step: 4, label: 'Segments:', 
@@ -171,16 +233,12 @@
             {id: 'zoom', min: 0.1, max: 2, value: 1.2, step: 0.1, label: 'Zoom:', 
              setter: val => config.zoomLevel = val},
             {id: 'rotationSpeed', min: 0.1, max: 10, value: 5, step: 0.1, label: 'Rotation Speed:',
-             setter: val => config.rotationSpeed = val},
-            {id: 'transitionSpeed', min: 0.1, max: 10, value: 3, step: 0.1, label: 'Transition Speed:',
-             setter: val => config.transitionSpeed = val},
-            {id: 'transitionTime', min: 15, max: 600, value: 15, step: 5, label: 'Transition Interval (sec):',
-             setter: val => config.transitionTime = Math.round(val)}
+             setter: val => config.rotationSpeed = val}
         ];
         
         // Animation state
         let width, height, centerX, centerY, radius, kaleidoscopeRadius;
-        let images = [], shuffledIndices = [], shufflePos = 0;
+        let images = [], imageQueue = [], imageQueueIndex = 0;
         let currentImageIndex = 0, nextImageIndex = -1;
         let transitionProgress = 0, isTransitioning = false;
         let angle = 0, lastTimestamp = 0, animationId = null, lastTransitionTime = 0;
@@ -200,6 +258,7 @@
             resizeCanvas();
             setupUI();
             loadSkyTextures();
+            music.init();
             
             // Activity monitor
             setInterval(() => {
@@ -238,8 +297,11 @@
             $('autoTransition').addEventListener('change', e => config.autoTransition = e.target.checked);
             $('toggleMusic').addEventListener('change', e => {
                 config.musicEnabled = e.target.checked;
-                config.musicEnabled ? bgMusic.play() : bgMusic.pause();
+                config.musicEnabled ? bgMusic.play().catch(e => console.error("Play error:", e)) : bgMusic.pause();
             });
+            
+            // Donate button
+            $('donateBtn').addEventListener('click', () => window.open('https://www.paypal.com', '_blank'));
             
             // Prevent context menu
             document.addEventListener('contextmenu', e => e.preventDefault());
@@ -264,7 +326,7 @@
             
             // Play music on first interaction
             document.addEventListener('click', () => {
-                if (config.musicEnabled) bgMusic.play();
+                if (config.musicEnabled) bgMusic.play().catch(e => console.error("Initial play error:", e));
             }, {once: true});
         }
         
@@ -340,10 +402,19 @@
         // Load sky textures
         function loadSkyTextures() {
             const {baseUrl, count, padLength, ext} = config.skyPreset;
-            for (let i = 1; i <= count; i++) {
+            const indices = Array.from({length: count}, (_, i) => i + 1);
+            
+            // Shuffle indices for random loading order
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            
+            // Load images in shuffled order
+            indices.forEach(i => {
                 const paddedNum = String(i).padStart(padLength, '0');
                 loadTexture(`${baseUrl}${paddedNum}.${ext}`);
-            }
+            });
         }
         
         // Load a texture
@@ -353,35 +424,40 @@
             img.src = url;
             
             img.onload = () => {
+                const index = images.length;
                 images.push(img);
+                imageQueue.push(index);
                 
                 if (images.length === 1) {
+                    // Randomize first image
                     currentImageIndex = 0;
                     if (!animationId) animationId = requestAnimationFrame(animate);
                 }
                 
-                if (shuffledIndices.length === 0) shuffleIndices();
+                // Shuffle image queue for first load
+                if (images.length === config.skyPreset.count) {
+                    shuffleImageQueue();
+                }
             };
             
             img.onerror = () => console.error('Error loading image:', url);
         }
         
-        // Shuffle image indices
-        function shuffleIndices() {
-            shuffledIndices = Array.from({length: images.length}, (_, i) => i);
-            for (let i = shuffledIndices.length - 1; i > 0; i--) {
+        // Shuffle image queue
+        function shuffleImageQueue() {
+            for (let i = imageQueue.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+                [imageQueue[i], imageQueue[j]] = [imageQueue[j], imageQueue[i]];
             }
-            shufflePos = 0;
+            imageQueueIndex = 0;
         }
         
-        // Get next shuffled index
-        function getNextShuffledIndex() {
-            if (shuffledIndices.length === 0 || shufflePos >= shuffledIndices.length) {
-                shuffleIndices();
+        // Get next image from queue
+        function getNextImageIndex() {
+            if (imageQueueIndex >= imageQueue.length) {
+                shuffleImageQueue();
             }
-            return shuffledIndices[shufflePos++];
+            return imageQueue[imageQueueIndex++];
         }
         
         // Resize canvas
@@ -417,7 +493,7 @@
             // Auto-transition check
             if (config.autoTransition && !isTransitioning && images.length > 1 && 
                 (currentTime - lastTransitionTime) > config.transitionTime) {
-                nextImageIndex = getNextShuffledIndex();
+                nextImageIndex = getNextImageIndex();
                 isTransitioning = true;
                 transitionProgress = 0;
                 lastTransitionTime = currentTime;
