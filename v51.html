@@ -192,10 +192,8 @@
             queue: [],
             currentIndex: 0,
             init() {
-                // Create a shuffled queue of all tracks
                 this.resetQueue();
                 this.loadCurrent();
-                
                 bgMusic.onended = () => this.playNext();
                 console.log("Music system initialized with tracks:", this.tracks);
             },
@@ -212,7 +210,6 @@
                 }
             },
             loadCurrent() {
-                if (this.currentIndex >= this.queue.length) this.resetQueue();
                 const trackIndex = this.queue[this.currentIndex];
                 const trackUrl = this.baseUrl + this.tracks[trackIndex];
                 bgMusic.src = trackUrl;
@@ -221,6 +218,7 @@
             },
             playNext() {
                 this.currentIndex++;
+                if (this.currentIndex >= this.queue.length) this.resetQueue();
                 console.log(`Playing next track, index: ${this.currentIndex}`);
                 this.loadCurrent();
             }
