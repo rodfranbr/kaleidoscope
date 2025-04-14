@@ -127,10 +127,6 @@
         </div>
         
         <h2>Textures</h2>
-        <select id="presetSelect">
-            <option value="">- Select Preset -</option>
-            <option value="sky">Sky</option>
-        </select>
         <button id="clearBtn">Clear</button>
         
         <div class="file-input-container">
@@ -155,7 +151,6 @@
         const fullscreenBtn = $('fullscreenBtn');
         const fsButtonMini = $('fsButtonMini');
         const textureName = $('textureName');
-        const presetSelect = $('presetSelect');
         const autoTransitionCb = $('autoTransition');
         const showTextureNameCb = $('showTextureName');
         const fileInput = $('fileInput');
@@ -170,16 +165,14 @@
             transitionTime: 15,
             glowIntensity: 1.0,
             glowSpread: 3.0,
-            edgeFade: 0.3, // Increased from 0.2 to 0.3 for smoother edge
+            edgeFade: 0.3,
             autoTransition: true,
             showTextureName: false,
-            presets: {
-                sky: {
-                    baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
-                    count: 42,
-                    padLength: 5,
-                    ext: 'jpeg'
-                }
+            skyPreset: {
+                baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
+                count: 42,
+                padLength: 5,
+                ext: 'jpeg'
             },
             segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
         };
@@ -204,7 +197,7 @@
         let currentImageIndex = 0, nextImageIndex = -1;
         let transitionProgress = 0, isTransitioning = false;
         let angle = 0, lastTimestamp = 0, animationId = null, lastTransitionTime = 0;
-        let lastActivity = Date.now();
+        let lastActivity = Date.now(), touchStartX, touchStartY;
         
         // Effect layers - create once
         const createCanvas = () => {
@@ -215,7 +208,10 @@
         const [glowCanvas, glowCtx] = createCanvas();
         const [mainCanvas, mainCtx] = createCanvas();
         const [fadeCanvas, fadeCtx] = createCanvas();
-        const [blendCanvas, blendCtx] = createCanvas(); // Added extra canvas for anti-aliasing
+        const [blendCanvas, blendCtx] = createCanvas();
+        
+        // Prevent context menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
         
         // Initialize
         function init() {
@@ -272,23 +268,19 @@
                 updateTextureName();
             });
             
-            // Preset select auto-load
-            presetSelect.addEventListener('change', e => {
-                const preset = e.target.value;
-                if (preset) loadRandomPresetTexture(preset, true);
-            });
-            
             // Clear button
-            clearBtn.addEventListener('click', () => {
-                clearKaleidoscope();
-                presetSelect.value = '';
-            });
+            clearBtn.addEventListener('click', clearKaleidoscope);
             
             // Fullscreen buttons
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             fsButtonMini.addEventListener('click', toggleFullscreen);
             
             document.addEventListener('fullscreenchange', updateFullscreenButtons);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', e => { lastActivity = Date.now(); });
             
             // Activity monitoring for cursor hiding
             ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(event => {
@@ -305,8 +297,44 @@
             
             window.addEventListener('resize', resizeCanvas);
             
-            // Load default texture
-            setTimeout(() => loadRandomPresetTexture('sky'), 500);
+            // Load default Sky texture
+            setTimeout(() => loadSkyTextures(), 500);
+        }
+        
+        // Touch handlers
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                lastActivity = Date.now();
+            }
+        }
+        
+        function handleTouchMove(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                
+                // Adjust zoom based on vertical movement
+                if (Math.abs(deltaY) > 10) {
+                    config.zoomLevel = Math.max(0.1, Math.min(2, config.zoomLevel - deltaY * 0.002));
+                    $('zoom').value = config.zoomLevel;
+                    $('zoomValue').textContent = config.zoomLevel.toFixed(1);
+                }
+                
+                // Adjust rotation speed based on horizontal movement
+                if (Math.abs(deltaX) > 10) {
+                    config.rotationSpeed = Math.max(0.1, Math.min(10, config.rotationSpeed + deltaX * 0.005));
+                    $('rotationSpeed').value = config.rotationSpeed;
+                    $('rotationSpeedValue').textContent = config.rotationSpeed.toFixed(1);
+                }
+                
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                lastActivity = Date.now();
+            }
         }
         
         // Clear kaleidoscope
@@ -367,21 +395,16 @@
             `;
         }
         
-        // Load preset textures
-        function loadRandomPresetTexture(presetName, clearExisting = false) {
-            const preset = config.presets[presetName];
-            if (!preset) return;
+        // Load sky textures (always default)
+        function loadSkyTextures() {
+            if (images.length) return;
             
-            if (clearExisting) {
-                clearKaleidoscope();
-            }
-            
-            // Load all preset textures at once
+            const preset = config.skyPreset;
             for (let i = 1; i <= preset.count; i++) {
                 const paddedNum = String(i).padStart(preset.padLength, '0');
                 const url = `${preset.baseUrl}${paddedNum}.${preset.ext}`;
-                const name = `${presetName}${paddedNum}`;
-                loadPresetTexture(url, name, 'online');
+                const name = `sky${paddedNum}`;
+                loadTexture(url, name, 'online');
             }
         }
         
@@ -424,7 +447,7 @@
         }
         
         // Loader for textures
-        function loadPresetTexture(url, name, source) {
+        function loadTexture(url, name, source) {
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.src = url;
@@ -448,9 +471,6 @@
             
             img.onerror = () => console.error('Error loading image:', url);
         }
-        
-        // Use same loader for user textures with source parameter
-        const loadTexture = loadPresetTexture;
         
         // Animation loop
         function animate(timestamp) {
