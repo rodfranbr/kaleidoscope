@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreamtime Kaleidoscope</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap');
+        
+        body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000; font-family:Montserrat,sans-serif; }
+        canvas { position:fixed; inset:0; width:100%; height:100%; }
+        
+        button, .file-input-button, input, select { 
+            margin:5px 0; padding:6px; width:100%; box-sizing:border-box;
+            border-radius:4px; font-family:inherit;
+        }
+        
+        button, .file-input-button { 
+            background:rgba(60,60,120,.6); color:white; border:none;
+            cursor:pointer; transition:background .2s; text-align:center;
+        }
+        
+        button:hover, .file-input-button:hover { background:rgba(80,80,160,.8); }
+        
+        input, select { 
+            border:1px solid rgba(100,100,255,.3); 
+            background:rgba(30,30,60,.6); color:#fff; 
+        }
+        
+        input:focus, button:focus, select:focus { 
+            outline:none; border-color:rgba(100,100,255,.8); 
+            box-shadow:0 0 5px rgba(100,100,255,.5); 
+        }
+        
+        .menu { 
+            position:fixed; top:15px; left:15px; 
+            background:rgba(10,10,20,.85); color:#e0e0ff; 
+            padding:18px; border-radius:12px; z-index:1000; 
+            box-shadow:0 0 20px rgba(50,50,150,.4); 
+            max-height:90vh; overflow-y:auto; max-width:360px;
+            border:1px solid rgba(100,100,255,.2);
+            transition:.3s; font-size:14px;
+        }
+        
+        .menu.hidden { 
+            opacity:0; transform:scale(.95); 
+            pointer-events:none; left:-380px; 
+        }
+        
+        .toggle-button, .expand-button {
+            position:fixed; width:24px; height:24px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:14px; z-index:1000;
+        }
+        
+        .toggle-button { top:10px; right:10px; position:absolute; }
+        .expand-button { top:15px; left:15px; opacity:0; pointer-events:none; z-index:999; }
+        .expand-button.visible { opacity:1; pointer-events:auto; }
+        
+        h1, h2 { color:#a0a0ff; margin-top:15px; margin-bottom:5px; }
+        h1 { font-size:20px; margin-top:0; text-align:center; text-shadow:0 0 5px rgba(100,100,255,.5); }
+        h2 { border-bottom:1px solid rgba(100,100,255,.3); font-size:16px; color:#b0b0ff; padding-bottom:3px; }
+        
+        .slider-container { display:flex; align-items:center; margin:5px 0; }
+        .slider-container label { flex:1; font-size:13px; }
+        .slider-container input { flex:2; }
+        .slider-container span { width:30px; text-align:right; font-size:12px; }
+        
+        input[type=range] { 
+            height:5px; -webkit-appearance:none; 
+            background:rgba(60,60,120,.4); outline:none; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb, 
+        input[type=range]::-moz-range-thumb { 
+            width:12px; height:12px; border-radius:50%;
+            background:#a0a0ff; cursor:pointer; -webkit-appearance:none;
+        }
+        
+        .file-input-container { position:relative; overflow:hidden; display:inline-block; width:100%; }
+        .file-input-container input[type=file] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+        
+        .checkbox-container { display:flex; align-items:center; margin:8px 0; }
+        .checkbox-container input[type="checkbox"] { width:auto; margin-right:8px; }
+        
+        .texture-name { 
+            position:fixed; top:15px; right:15px; 
+            color:#e0e0ff; font-size:18px; font-weight:500;
+            text-shadow:0 0 10px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.7);
+            opacity:0.8; z-index:998; pointer-events:none;
+            padding:5px 10px; background:rgba(0,0,20,.5);
+            border-radius:5px; display:none;
+        }
+        
+        .texture-source { font-size:14px; margin-top:3px; text-align:center; }
+        .cursor-hidden { cursor:none !important; }
+        
+        .fs-button-mini {
+            position:fixed; bottom:15px; left:15px; 
+            font-size:12px; width:auto; padding:4px 8px;
+            z-index:999; opacity:0;
+        }
+        
+        .fs-button-mini.visible { opacity:0.7; }
+        .fs-button-mini:hover { opacity:1; }
+    </style>
+</head>
+<body>
+    <canvas id="kaleidoscope"></canvas>
+    <div class="texture-name" id="textureName"></div>
+    
+    <div class="menu" id="menu">
+        <h1>Dreamtime Kaleidoscope</h1>
+        <button class="toggle-button" id="toggleMenu">←</button>
+        
+        <h2>Controls</h2>
+        <div id="sliders"></div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="autoTransition" checked>
+            <label for="autoTransition">Auto Texture Transition</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="showTextureName">
+            <label for="showTextureName">Show Texture Name</label>
+        </div>
+        
+        <h2>Textures</h2>
+        <select id="presetSelect">
+            <option value="">- Select Preset -</option>
+            <option value="sky">Sky</option>
+        </select>
+        <button id="clearBtn">Clear</button>
+        
+        <div class="file-input-container">
+            <div class="file-input-button">Load Texture</div>
+            <input type="file" id="fileInput" accept="image/*" multiple webkitdirectory directory>
+        </div>
+        
+        <button id="fullscreenBtn">Fullscreen</button>
+    </div>
+    
+    <button class="expand-button" id="expandMenu">→</button>
+    <button class="fs-button-mini" id="fsButtonMini">Fullscreen</button>
+    
+    <script>
+        // DOM elements and globals
+        const $ = id => document.getElementById(id);
+        const canvas = $('kaleidoscope');
+        const ctx = canvas.getContext('2d');
+        const menu = $('menu');
+        const toggleBtn = $('toggleMenu');
+        const expandBtn = $('expandMenu');
+        const fullscreenBtn = $('fullscreenBtn');
+        const fsButtonMini = $('fsButtonMini');
+        const textureName = $('textureName');
+        const presetSelect = $('presetSelect');
+        const autoTransitionCb = $('autoTransition');
+        const showTextureNameCb = $('showTextureName');
+        const fileInput = $('fileInput');
+        const clearBtn = $('clearBtn');
+        
+        // Configuration
+        const config = {
+            segmentCount: 24,
+            zoomLevel: 1.2,
+            rotationSpeed: 5.0,
+            transitionSpeed: 3.0,
+            transitionTime: 15,
+            glowIntensity: 1.0,
+            glowSpread: 3.0,
+            edgeFade: 0.3, // Increased from 0.2 to 0.3 for smoother edge
+            autoTransition: true,
+            showTextureName: false,
+            presets: {
+                sky: {
+                    baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
+                    count: 42,
+                    padLength: 5,
+                    ext: 'jpeg'
+                }
+            },
+            segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
+        };
+        
+        // Slider definitions
+        const sliders = [
+            {id: 'segments', min: 4, max: 128, value: 24, step: 4, label: 'Segments:', 
+             setter: val => config.segmentCount = Math.floor(val/4)*4},
+            {id: 'zoom', min: 0.1, max: 2, value: 1.2, step: 0.1, label: 'Zoom:', 
+             setter: val => config.zoomLevel = val},
+            {id: 'rotationSpeed', min: 0.1, max: 10, value: 5, step: 0.1, label: 'Rotation Speed:',
+             setter: val => config.rotationSpeed = val},
+            {id: 'transitionSpeed', min: 0.1, max: 10, value: 3, step: 0.1, label: 'Transition Speed:',
+             setter: val => config.transitionSpeed = val},
+            {id: 'transitionTime', min: 15, max: 600, value: 15, step: 5, label: 'Transition Interval (sec):',
+             setter: val => config.transitionTime = Math.round(val)}
+        ];
+        
+        // Animation state
+        let width, height, centerX, centerY, radius, kaleidoscopeRadius;
+        let images = [], imageNames = [], imageSources = [], shuffledIndices = [], shufflePos = 0;
+        let currentImageIndex = 0, nextImageIndex = -1;
+        let transitionProgress = 0, isTransitioning = false;
+        let angle = 0, lastTimestamp = 0, animationId = null, lastTransitionTime = 0;
+        let lastActivity = Date.now();
+        
+        // Effect layers - create once
+        const createCanvas = () => {
+            const c = document.createElement('canvas');
+            return [c, c.getContext('2d')];
+        };
+        
+        const [glowCanvas, glowCtx] = createCanvas();
+        const [mainCanvas, mainCtx] = createCanvas();
+        const [fadeCanvas, fadeCtx] = createCanvas();
+        const [blendCanvas, blendCtx] = createCanvas(); // Added extra canvas for anti-aliasing
+        
+        // Initialize
+        function init() {
+            resizeCanvas();
+            
+            // Menu toggle
+            toggleBtn.addEventListener('click', () => {
+                menu.classList.add('hidden');
+                expandBtn.classList.add('visible');
+                fsButtonMini.classList.add('visible');
+            });
+            
+            expandBtn.addEventListener('click', () => {
+                menu.classList.remove('hidden');
+                expandBtn.classList.remove('visible');
+                fsButtonMini.classList.remove('visible');
+            });
+            
+            // Generate slider HTML
+            $('sliders').innerHTML = sliders.map(({id, min, max, value, step, label}) => `
+                <div class="slider-container">
+                    <label for="${id}">${label}</label>
+                    <input type="range" id="${id}" min="${min}" max="${max}" value="${value}" step="${step}">
+                    <span id="${id}Value">${Number.isInteger(value) ? value : value.toFixed(1)}</span>
+                </div>
+            `).join('');
+            
+            // Setup sliders
+            sliders.forEach(slider => {
+                $(slider.id).addEventListener('input', e => {
+                    const val = slider.setter(parseFloat(e.target.value));
+                    $(slider.id + 'Value').textContent = Number.isInteger(val) ? val : val.toFixed(1);
+                });
+            });
+            
+            // File input handler
+            fileInput.addEventListener('change', e => {
+                if (!e.target.files?.length) return;
+                
+                Array.from(e.target.files)
+                    .filter(file => file.type.startsWith('image/'))
+                    .forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = e => loadTexture(e.target.result, file.name, 'hd');
+                        reader.readAsDataURL(file);
+                    });
+            });
+            
+            // Other event listeners
+            autoTransitionCb.addEventListener('change', e => config.autoTransition = e.target.checked);
+            showTextureNameCb.addEventListener('change', e => {
+                config.showTextureName = e.target.checked;
+                textureName.style.display = config.showTextureName ? 'block' : 'none';
+                updateTextureName();
+            });
+            
+            // Preset select auto-load
+            presetSelect.addEventListener('change', e => {
+                const preset = e.target.value;
+                if (preset) loadRandomPresetTexture(preset, true);
+            });
+            
+            // Clear button
+            clearBtn.addEventListener('click', () => {
+                clearKaleidoscope();
+                presetSelect.value = '';
+            });
+            
+            // Fullscreen buttons
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            fsButtonMini.addEventListener('click', toggleFullscreen);
+            
+            document.addEventListener('fullscreenchange', updateFullscreenButtons);
+            
+            // Activity monitoring for cursor hiding
+            ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(event => {
+                document.addEventListener(event, () => {
+                    lastActivity = Date.now();
+                    document.body.classList.remove('cursor-hidden');
+                    expandBtn.style.opacity = expandBtn.classList.contains('visible') ? '1' : '0';
+                    fsButtonMini.style.opacity = fsButtonMini.classList.contains('visible') ? '0.7' : '0';
+                });
+            });
+            
+            // Cursor hiding timer
+            setInterval(checkIdle, 1000);
+            
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Load default texture
+            setTimeout(() => loadRandomPresetTexture('sky'), 500);
+        }
+        
+        // Clear kaleidoscope
+        function clearKaleidoscope() {
+            images = [];
+            imageNames = [];
+            imageSources = [];
+            shuffledIndices = [];
+            currentImageIndex = 0;
+            nextImageIndex = -1;
+            isTransitioning = false;
+            textureName.style.display = 'none';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.error(e));
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            updateFullscreenButtons();
+        }
+        
+        // Update fullscreen button text
+        function updateFullscreenButtons() {
+            const isFullscreen = !!document.fullscreenElement;
+            fullscreenBtn.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+            fsButtonMini.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+        }
+        
+        // Check for idle time
+        function checkIdle() {
+            if (Date.now() - lastActivity > 3000) {
+                document.body.classList.add('cursor-hidden');
+                expandBtn.style.opacity = '0';
+                fsButtonMini.style.opacity = '0';
+            }
+        }
+        
+        // Update texture name display
+        function updateTextureName() {
+            if (!config.showTextureName || images.length === 0) return;
+            
+            const imgName = imageNames[currentImageIndex] || '';
+            const imgSource = imageSources[currentImageIndex] || '';
+            
+            textureName.innerHTML = `
+                ${imgName.split('.')[0].toUpperCase()}
+                <div class="texture-source">${imgSource}</div>
+            `;
+        }
+        
+        // Load preset textures
+        function loadRandomPresetTexture(presetName, clearExisting = false) {
+            const preset = config.presets[presetName];
+            if (!preset) return;
+            
+            if (clearExisting) {
+                clearKaleidoscope();
+            }
+            
+            // Load all preset textures at once
+            for (let i = 1; i <= preset.count; i++) {
+                const paddedNum = String(i).padStart(preset.padLength, '0');
+                const url = `${preset.baseUrl}${paddedNum}.${preset.ext}`;
+                const name = `${presetName}${paddedNum}`;
+                loadPresetTexture(url, name, 'online');
+            }
+        }
+        
+        // Generate shuffled indices
+        function shuffleIndices() {
+            shuffledIndices = Array.from({length: images.length}, (_, i) => i);
+            for (let i = shuffledIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+            }
+            shufflePos = 0;
+        }
+        
+        // Get next index in shuffle
+        function getNextShuffledIndex() {
+            if (shuffledIndices.length === 0 || shufflePos >= shuffledIndices.length) {
+                shuffleIndices();
+            }
+            return shuffledIndices[shufflePos++];
+        }
+        
+        // Resize canvas and effect buffers
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            centerX = width / 2;
+            centerY = height / 2;
+            radius = Math.min(width, height) * 0.42;
+            kaleidoscopeRadius = radius * config.zoomLevel;
+            
+            // Resize effect canvases
+            [glowCanvas, mainCanvas, fadeCanvas, blendCanvas].forEach(c => {
+                c.width = width;
+                c.height = height;
+            });
+            
+            if (images.length) render();
+        }
+        
+        // Loader for textures
+        function loadPresetTexture(url, name, source) {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = url;
+            
+            img.onload = () => {
+                images.push(img);
+                imageNames.push(name || url.split('/').pop());
+                imageSources.push(source || 'online');
+                
+                if (images.length === 1) {
+                    currentImageIndex = 0;
+                    updateTextureName();
+                    if (!animationId) animationId = requestAnimationFrame(animate);
+                }
+                
+                // Initialize shuffle if this is the first load
+                if (shuffledIndices.length === 0) {
+                    shuffleIndices();
+                }
+            };
+            
+            img.onerror = () => console.error('Error loading image:', url);
+        }
+        
+        // Use same loader for user textures with source parameter
+        const loadTexture = loadPresetTexture;
+        
+        // Animation loop
+        function animate(timestamp) {
+            const deltaTime = Math.min(timestamp - lastTimestamp, 100) || 16.67;
+            lastTimestamp = timestamp;
+            
+            angle += 0.00001 * deltaTime * config.rotationSpeed;
+            
+            const currentTime = timestamp / 1000;
+            
+            // Auto-transition check
+            if (config.autoTransition && !isTransitioning && images.length > 1 && 
+                (currentTime - lastTransitionTime) > config.transitionTime) {
+                nextImageIndex = getNextShuffledIndex();
+                isTransitioning = true;
+                transitionProgress = 0;
+                lastTransitionTime = currentTime;
+            }
+            
+            // Update transition progress
+            if (isTransitioning) {
+                transitionProgress += deltaTime / (3000 * (5.0 / config.transitionSpeed));
+                
+                if (transitionProgress >= 1) {
+                    currentImageIndex = nextImageIndex;
+                    nextImageIndex = -1;
+                    isTransitioning = false;
+                    transitionProgress = 0;
+                    updateTextureName();
+                }
+            }
+            
+            render();
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Render the kaleidoscope
+        function render() {
+            if (!images.length) return;
+            
+            kaleidoscopeRadius = radius * config.zoomLevel;
+            
+            // Clear canvases
+            [ctx, mainCtx, glowCtx, fadeCtx, blendCtx].forEach(context => {
+                context.clearRect(0, 0, width, height);
+            });
+            
+            const segmentAngle = config.segmentAngle();
+            const overlapFactor = 1.1;
+            
+            // Draw main kaleidoscope
+            mainCtx.save();
+            mainCtx.translate(centerX, centerY);
+            mainCtx.imageSmoothingEnabled = true;
+            
+            const currentImg = images[currentImageIndex];
+            const nextImg = isTransitioning && nextImageIndex >= 0 ? images[nextImageIndex] : null;
+            
+            // Calculate scale to fit image properly regardless of resolution
+            const getScaledDimensions = (img) => {
+                // Scale factor ensures image fits the kaleidoscope segment
+                const scaleFactor = kaleidoscopeRadius * 2 / Math.max(img.width, img.height);
+                return [img.width * scaleFactor, img.height * scaleFactor];
+            };
+            
+            // Draw segments
+            for (let i = 0; i < config.segmentCount; i++) {
+                mainCtx.save();
+                mainCtx.rotate(segmentAngle * i);
+                
+                // Clip segment
+                mainCtx.beginPath();
+                mainCtx.moveTo(0, 0);
+                mainCtx.arc(0, 0, kaleidoscopeRadius, -segmentAngle/2 * overlapFactor, segmentAngle/2 * overlapFactor);
+                mainCtx.closePath();
+                mainCtx.clip();
+                
+                // Alternate rotation direction
+                mainCtx.rotate(angle * (i % 2 === 0 ? 1 : -1));
+                
+                // Draw current image with proper scaling
+                if (nextImg) {
+                    // Transitioning between images
+                    const [drawWidth, drawHeight] = getScaledDimensions(currentImg);
+                    const [nextDrawWidth, nextDrawHeight] = getScaledDimensions(nextImg);
+                    
+                    mainCtx.globalAlpha = 1 - transitionProgress;
+                    mainCtx.drawImage(currentImg, -drawWidth/2, -drawHeight/2, drawWidth, drawHeight);
+                    
+                    mainCtx.globalAlpha = transitionProgress;
+                    mainCtx.drawImage(nextImg, -nextDrawWidth/2, -nextDrawHeight/2, nextDrawWidth, nextDrawHeight);
+                    mainCtx.globalAlpha = 1;
+                } else {
+                    const [drawWidth, drawHeight] = getScaledDimensions(currentImg);
+                    mainCtx.drawImage(currentImg, -drawWidth/2, -drawHeight/2, drawWidth, drawHeight);
+                }
+                
+                mainCtx.restore();
+            }
+            
+            mainCtx.restore();
+            
+            // Create smooth anti-aliased edge with multiple gradient passes
+            blendCtx.save();
+            blendCtx.drawImage(mainCanvas, 0, 0);
+            
+            // First we draw edge blend with smooth transition using multiple steps
+            blendCtx.globalCompositeOperation = 'destination-out';
+            
+            const edgeFadeWidth = kaleidoscopeRadius * config.edgeFade;
+            const innerRadius = kaleidoscopeRadius - edgeFadeWidth;
+            
+            // Create smoother multi-step gradient for edge fading
+            const gradient = blendCtx.createRadialGradient(
+                centerX, centerY, innerRadius * 0.98, // Start slightly earlier
+                centerX, centerY, kaleidoscopeRadius * 1.02 // Extend slightly beyond
+            );
+            
+            // Multi-step gradient for smoother transitions
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(0.7, 'rgba(0,0,0,0.1)');
+            gradient.addColorStop(0.85, 'rgba(0,0,0,0.4)');
+            gradient.addColorStop(0.95, 'rgba(0,0,0,0.8)');
+            gradient.addColorStop(1, 'rgba(0,0,0,1)');
+            
+            blendCtx.fillStyle = gradient;
+            blendCtx.beginPath();
+            blendCtx.arc(centerX, centerY, kaleidoscopeRadius * 1.05, 0, Math.PI * 2);
+            blendCtx.fill();
+            
+            // Additional subtle blur pass for smooth edge
+            blendCtx.filter = 'blur(1px)';
+            blendCtx.globalCompositeOperation = 'destination-out';
+            blendCtx.beginPath();
+            blendCtx.arc(centerX, centerY, kaleidoscopeRadius, 0, Math.PI * 2);
+            blendCtx.fill();
+            blendCtx.filter = 'none';
+            blendCtx.restore();
+            
+            // Now render the fade to fadeCanvas
+            fadeCtx.clearRect(0, 0, width, height);
+            fadeCtx.drawImage(blendCanvas, 0, 0);
+            
+            // Glow effect
+            glowCtx.save();
+            glowCtx.drawImage(fadeCanvas, 0, 0);
+            glowCtx.filter = 'blur(20px)';
+            glowCtx.globalAlpha = config.glowIntensity * 0.7;
+            glowCtx.drawImage(fadeCanvas, 0, 0);
+            
+            // Multi-layer glow
+            for (let scale = 1.05; scale <= config.glowSpread; scale += 0.1) {
+                glowCtx.globalAlpha = config.glowIntensity * (1.5 - scale/config.glowSpread) * 0.5;
+                glowCtx.save();
+                glowCtx.translate(centerX, centerY);
+                glowCtx.scale(scale, scale);
+                glowCtx.translate(-centerX, -centerY);
+                glowCtx.filter = `blur(${Math.floor(12 + scale * 10)}px)`;
+                glowCtx.drawImage(fadeCanvas, 0, 0);
+                glowCtx.restore();
+            }
+            
+            glowCtx.restore();
+            
+            // Final composite
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.globalCompositeOperation = 'screen';
+            ctx.drawImage(glowCanvas, 0, 0);
+            
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(fadeCanvas, 0, 0);
+        }
+        
+        init();
+    </script>
+</body>
+</html>
