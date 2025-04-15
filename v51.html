@@ -185,8 +185,8 @@
                 prefix: 'music',
                 ext: 'mp3',
                 delayBetween: 3000,
-                fadeOutStart: 5,     // Segundos antes do fim para começar o fade
-                silenceBetween: 3000  // Pausa em ms entre músicas
+                fadeOutStart: 5,
+                silenceBetween: 3000
             },
             get segmentAngle() { return (Math.PI * 2) / this.segmentCount; }
         };
@@ -197,7 +197,7 @@
             currentIndex: 0,
             delayTimer: null,
             isFading: false,
-            fadeOutTime: 0, 
+            fadeOutTime: 0,
             init() {
                 this.resetQueue();
                 this.loadCurrent();
@@ -225,7 +225,6 @@
             handleTimeUpdate() {
                 if (!bgMusic.duration) return;
                 
-                // Inicia fade out quando estiver próximo do fim
                 const timeRemaining = bgMusic.duration - bgMusic.currentTime;
                 
                 if (timeRemaining < config.musicPreset.fadeOutStart && !this.isFading) {
@@ -236,11 +235,10 @@
                 if (this.isFading) {
                     const elapsed = (Date.now() - this.fadeOutTime) / 1000;
                     const fadeRatio = Math.max(0.01, 1 - (elapsed / config.musicPreset.fadeOutStart));
-                    bgMusic.volume = Math.pow(fadeRatio, 2); // Aplicação exponencial para fade mais natural
+                    bgMusic.volume = Math.pow(fadeRatio, 2);
                 }
             },
             handleEnded() {
-                // Pausa por um tempo antes de iniciar a próxima música
                 clearTimeout(this.delayTimer);
                 this.delayTimer = setTimeout(() => {
                     this.currentIndex = (this.currentIndex + 1) % this.queue.length;
@@ -429,7 +427,6 @@
             const {baseUrl, count, padLength, ext} = config.skyPreset;
             const indices = shuffleArray(Array.from({length: count}, (_, i) => i + 1));
             
-            // Load images in shuffled order
             indices.forEach(i => {
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
