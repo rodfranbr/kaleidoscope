@@ -173,9 +173,10 @@
             autoTransition: true,
             musicEnabled: true,
             skyPreset: {
-                baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/sky',
+                baseUrl: 'https://raw.githubusercontent.com/rodfranbr/kaleidoscope/refs/heads/main/',
+                prefix: 'sky',  // Adicione esta linha para o prefixo das imagens
                 count: 71,
-                padLength: 5,
+                padLength: 4,   // Ajuste para 4 dígitos após o "sky"
                 ext: 'jpeg'
             },
             musicPreset: {
@@ -424,15 +425,26 @@
         
         // Load sky textures
         function loadSkyTextures() {
-            const {baseUrl, count, padLength, ext} = config.skyPreset;
+            const {baseUrl, count, padLength, ext, prefix} = config.skyPreset;
             const indices = shuffleArray(Array.from({length: count}, (_, i) => i + 1));
+            let loadedCount = 0;
+            let failedCount = 0;
+            
+            console.log(`Attempting to load ${count} images from ${baseUrl}`);
             
             indices.forEach(i => {
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
-                img.src = `${baseUrl}${String(i).padStart(padLength, '0')}.${ext}`;
+                // Use o prefixo 'sky' antes do número
+                const imgPath = `${baseUrl}${prefix}${String(i).padStart(padLength, '0')}.${ext}`;
+                img.src = imgPath;
+                
+                console.log(`Loading: ${imgPath}`); // Log each image URL
                 
                 img.onload = () => {
+                    loadedCount++;
+                    console.log(`Successfully loaded image ${i}/${count} (Total: ${loadedCount})`);
+                    
                     const index = images.length;
                     images.push(img);
                     imageQueue.push(index);
@@ -442,10 +454,24 @@
                         if (!animationId) animationId = requestAnimationFrame(animate);
                     }
                     
-                    if (images.length === count) shuffleImageQueue();
+                    if (loadedCount + failedCount === count) {
+                        console.log(`Loading complete. Loaded: ${loadedCount}, Failed: ${failedCount}`);
+                        if (loadedCount > 0) shuffleImageQueue();
+                    }
                 };
                 
-                img.onerror = () => console.error('Error loading image:', img.src);
+                img.onerror = () => {
+                    failedCount++;
+                    console.error(`Failed to load image: ${imgPath}`);
+                    
+                    // Log a link to check manually
+                    console.log(`Check if this URL works in browser: ${imgPath}`);
+                    
+                    if (loadedCount + failedCount === count) {
+                        console.log(`Loading complete. Loaded: ${loadedCount}, Failed: ${failedCount}`);
+                        if (loadedCount > 0) shuffleImageQueue();
+                    }
+                };
             });
         }
         
